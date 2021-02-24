@@ -12,7 +12,7 @@ public class PackageSizeTest {
     /**
      * Find all grouping configurations, will return duplicates.
      * @param numWanted the target amount of items
-     * @return the total number of valid groupings.  Will contain duplicates when order is different.
+     * @return all valid groupings.  Will contain duplicates when order is different.
      */
     public List<PackageGroup> findAllGroupings(Integer numWanted){
         LinkedList<PackageGroup> groups = new LinkedList<>();
@@ -24,7 +24,7 @@ public class PackageSizeTest {
                 int curTotal = curGrp.getCurrentTotal() + i;
                 PackageGroup newGroup = new PackageGroup(curTotal);
                 // Tricky to figure out, using a simple assignment lead a single ever-growing list.
-                // This is the proper method to copy the contents of a list into a new list.
+                // This is the proper way to copy the contents of a list into a new list.
                 newGroup.getPackageList().addAll(curGrp.getPackageList());
                 newGroup.getPackageList().add(i);
                 if(curTotal == numWanted){
@@ -38,15 +38,24 @@ public class PackageSizeTest {
         return matches;
     }
 
+    /**
+     * @param numWanted the target amount of items
+     * @return a boolean value of whether or not valid groupings are found
+     */
     public boolean doesGroupExist(Integer numWanted){
         return !findAllGroupings(numWanted).isEmpty();
     }
 
+    /**
+     * Find all unique grouping configurations, does not return duplicates.
+     * @param numWanted the target amount of items
+     * @return all unique valid groupings.
+     */
     public List<PackageGroup> findUniqueGroupings(Integer numWanted){
         // This is explicitly a LinkedList so it can use queue functionality of LinkedList
         LinkedList<PackageGroup> allGroups = (LinkedList<PackageGroup>) findAllGroupings(numWanted);
         List<PackageGroup> uniqueGroups = new LinkedList<>();
-        
+
         // Sort the lists
         for(PackageGroup group : allGroups){
             Collections.sort(group.getPackageList());
@@ -70,15 +79,31 @@ public class PackageSizeTest {
         return uniqueGroups;
     }
 
+    /**
+     * Find the most efficient groupings.  If there are multiple equally-efficient groupings it will return all of them.
+     * Filters out duplicate groupings with different orderings.
+     * @param numWanted the target amount of items
+     * @return the most efficient valid groupings.
+     */
     public List<PackageGroup> findMostEfficientGroupings(Integer numWanted){
         // First gather only unique combinations
         List<PackageGroup> uniques = findUniqueGroupings(numWanted);
         List<PackageGroup> shortests = new LinkedList<>();
 
-        // TODO: Sort 'uniques' by length of packageList.  Will likely need to write own comparator for this.
-        // TODO: Once sorting is done keep all groups that have the lowest number of items in packageList.
-        // TODO: This may only return one value, it may return multiple if there are multiple with same-sized
-        // TODO: packageLists.
+        // Sort 'uniques' by length of packageList.  Will likely need to write own comparator for this.
+        Comparator<PackageGroup> compareByPackageGroupSize = (PackageGroup p1, PackageGroup p2) -> p1.getPackageList().size() - p2.getPackageList().size();
+        Collections.sort(uniques, compareByPackageGroupSize);
+        // Once sorting is done keep all groups that have the lowest number of items in packageList.
+        int maxSize = -1;
+        for(PackageGroup group : uniques){
+            if(maxSize == -1) {  // Set maxSize to length of first PackageGroup.  Due to sort it will be the lowest value.
+                maxSize = group.getPackageList().size();
+            }
+
+            if(group.getPackageList().size() == maxSize){
+                shortests.add(group);
+            }
+        }
 
         return shortests;
     }
